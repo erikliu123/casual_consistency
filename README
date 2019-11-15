@@ -1,0 +1,5 @@
+
+
+if server can't bind to a port, run following:
+lsof -i:8890
+kill -9 [pid]
