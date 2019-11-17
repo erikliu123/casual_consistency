@@ -4,7 +4,7 @@ REPLICA_APP = replicas
 PROGS = $(CLIENT_APP) $(SERVER_APP) $(REPLICA_APP)
 CC=g++
 DEPEND=client.o server.o replicas.o
-CFLAGS = -lnsl -lpthread -w #-lsocket 
+CFLAGS = -lnsl -lpthread -w -D TEST -pthread #-lsocket 
 
 
 
@@ -37,4 +37,4 @@ run:
 
 clean:
 	rm -f *.o
-	#rm -f $(PROGS)
+	rm -f $(PROGS)

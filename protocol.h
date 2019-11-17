@@ -66,9 +66,11 @@ typedef struct MesInfo
     union{
         //client interconnect
         struct{
+                
                 char         fromName[MAX_NAME_LEN];
                 char         toName[MAX_NAME_LEN];
                 char         MesContent[MAX_MES_LEN];
+                short int    chat_timestamp;
         };
         //replicate write
         struct{
@@ -76,6 +78,14 @@ typedef struct MesInfo
             datacenter_id id;
             char username[MAX_NAME_LEN];
             char key[MAX_MES_LEN];
+            // dependency replicate write requires
+            struct{
+             //char check_username[MAX_NAME_LEN];
+             short int number;//how many dependencies
+             short int depend_timestamps[100];
+             datacenter_id depend_centerids[100];
+
+            };
         };
         //Apply to GET depend
         struct{ 
@@ -85,13 +95,13 @@ typedef struct MesInfo
             //char check_key[MAX_MES_LEN];
         };
         //REPLY depend
-        struct{
+       /* struct{
              char check_username[MAX_NAME_LEN];
              short int number;//dependent timestamps
              short int depend_timestamps[100];
              datacenter_id depend_centerids[100];
 
-        };
+        };*/
 
         short int port;
         datacenter_id dc_id;//for NewUser location

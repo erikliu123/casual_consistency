@@ -14,54 +14,76 @@
 
 void *handle_message(void *data);
 int send_servers(MesInfo *mes);
-void debugs(){
-    printf("1234\n");
-}
-
 
 //datacenter_id global_id=0;
 //pthread_mutex_t mutex;
 void *master_handle_message(void *data);
+void *client_thread(void *data);
 //map<datacenter_id, int>
+pthread_t pid[100];
 int main(int argc, char *argv[]){
  
 	int sock=create_client_port(SERVER_PORT, NULL);
     hasOpenMyPort=1;
     isLogin=1;
     master_enable=1;
-    pthread_t pid[100];
+    pthread_t  client_pid;
     int count=0;
     center_id=0;
     init_mutex_lock(&mutex);
     //servers[0]=SERVER_PORT;
-    while (1)
+         //communicate with clients and other server
+    if(pthread_create(&client_pid, NULL, client_thread, (void *)&sock)){
+            printf("client thread can't establish!\n", sock);
+    }
+   
+    
+    while(!isQuit){
+        printf("$");
+        string mes;
+        cin>>mes;
+        
+        if(mes=="quit"||mes=="q"){
+            isQuit=1;
+        }
+        else if(mes=="print"){
+            //print dependency
+            //for()
+            printDependency();
+        }
+    }
+    for(int i=0; i<client_count; ++i){
+        pthread_join(pid[i], NULL);
+    }
+    close(sock);
+    
+
+    return 0;
+}
+
+void *client_thread(void *data){
+    int sock=*(int *)data;
+    
+    while (!isQuit)
     {
         struct sockaddr_in clnt_addr;
         socklen_t clnt_addr_size = sizeof(clnt_addr);
 
         socklen_t sock_len;
         int clnt_sock = accept(sock, (struct sockaddr*)&clnt_addr, &sock_len);
-        
         if(clnt_sock==-1){
-            //usleep(SLEEP_TIME);
+            usleep(SLEEP_TIME);
             continue ;
         }
-        fcntl(clnt_sock, F_SETFL, O_NONBLOCK);//non block
-        if(pthread_create(&pid[count++], NULL, handle_message, (void *)&clnt_sock)){
+        
+        if(pthread_create(&pid[client_count++], NULL, handle_message, (void *)&clnt_sock)){
             printf("ERROR: thread can not established on socknum %d!\n", clnt_sock);
         }
         printf(">>>>>accpeted new request, thread established on socknum %d!\n", clnt_sock);
-        
+        usleep(SLEEP_TIME);
 
     }
-    for(int i=0; i<count; ++i){
-        pthread_join(pid[i], NULL);
-    }
-    close(sock);
-    
-    
-
-    return 0;
+     close(sock);
 }
 //handle clients infomation
 void *master_handle_message(void *data){

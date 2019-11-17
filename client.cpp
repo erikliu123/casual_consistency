@@ -94,7 +94,7 @@ int main(int argc, char *argv[]){
 void *read_message(void *data){
     int sock=*((int *)data);
     MesInfo recvInfo; 
-    char buf[1024];
+    char buf[sizeof(recvInfo)];
     while(!isExit){
         memset(&recvInfo, 0, sizeof(recvInfo));
         int n=recv(sock, buf, sizeof(buf), 0);
@@ -105,7 +105,7 @@ void *read_message(void *data){
         memcpy(&recvInfo.MesType, buf, sizeof(recvInfo.MesType));
         switch(recvInfo.MesType){
             case MesSend: 
-                 memcpy(&recvInfo.fromName, buf+sizeof(recvInfo.MesType), n-sizeof(recvInfo.MesType));
+                memcpy(&recvInfo.fromName, buf+sizeof(recvInfo.MesType)/* +sizeof(recvInfo.chat_timestamp) */, n-sizeof(recvInfo.MesType));
                 printf("\t  [%s] ==> %s\n",recvInfo.fromName, recvInfo.MesContent);
                 break;
             case FetchUser:
@@ -169,7 +169,7 @@ bool send_message(int servSocket)
                 continue;
             }
             //printf("toName=%s\n",toName);
-            if(strcmp(toName, "all")==0){
+            if(strcmp(toName, "all")==0 /* || strcmp(toName, "a")==0 */){
                 sendInfo.MesType=FetchUser;
                 if(send(servSock, &sendInfo, HEADER_LEN-sizeof(sendInfo.toName), 0)<=0){
                      cout<<"message  send  in failure\n";
@@ -178,7 +178,7 @@ bool send_message(int servSocket)
                 continue ;
 
             }
-            else if(strcmp(toName, "quit")==0){
+            else if(strcmp(toName, "quit")==0 || strcmp(toName, "q")==0 ){
                 sendInfo.MesType=UserLeave;
                 if(send(servSock, &sendInfo,  HEADER_LEN-sizeof(sendInfo.toName), 0)<=0){
                      cout<<"message  send  in failure\n";

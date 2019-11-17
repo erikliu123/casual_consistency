@@ -13,17 +13,20 @@
 #include "file.h"
 
 void *handle_message(void *data);//communicate with client
-
+void *client_thread(void *data);
 
 void debugs(){
     printf("1234\n");
 }
 
+pthread_t pid[100];
+
+
 int main(int argc, char *argv[]){
  
 	int sock;
-    pthread_t pid[100];
-    int count=0;
+    
+    
     int find_p=0;// -p port exist or not
     for(int i=1; i<argc; ++i){
         if(strcmp(argv[i], "-p")==0){
@@ -67,17 +70,52 @@ int main(int argc, char *argv[]){
         exit(1);  
     }  
     master_sockfd=master_socket;
-    servers[0]={master_sockfd, SERVER_PORT};
-    pthread_t server_pid;
+    servers[0]={master_sockfd, SERVER_PORT};//record a server
+    pthread_t server_pid, client_pid;
     /*` create a socket and  listen to clients    */
     sock=create_client_port(myport, NULL);
     hasOpenMyPort=1;
+    //communicate with master
     if(pthread_create(&server_pid, NULL, handle_message, (void *)&master_socket)){
-            printf("Client Dump: thread can not established on socknum %d!\n", sock);
+            printf("Client Dump: thread can not established on socknum %d!\n", master_socket);
+    }
+     //communicate with clients and other server
+    if(pthread_create(&client_pid, NULL, client_thread, (void *)&sock)){
+            printf("client thread can't establish!\n", sock);
+    }
+   
+    while(!isQuit){
+        printf("$");
+        string mes;
+        cin>>mes;
+        
+        if(mes=="quit"||mes=="q"){
+            isQuit=1;
+        }
+        else if(mes=="print"){
+            //print dependency
+            //for()
+            
+            printDependency();
+        }
     }
 
 
-    while (1)
+    //input message
+    for(int i=0; i<client_count; ++i){
+        pthread_join(pid[i], NULL);
+    }
+    close(master_sockfd);
+
+    printf("replica safely exit\n");
+   
+    
+    return 0;
+}
+
+void *client_thread(void *data){
+    int sock=*(int *)data;
+    while (!isQuit)
     {
         struct sockaddr_in clnt_addr;
         socklen_t clnt_addr_size = sizeof(clnt_addr);
@@ -85,28 +123,22 @@ int main(int argc, char *argv[]){
         socklen_t sock_len;
         int clnt_sock = accept(sock, (struct sockaddr*)&clnt_addr, &sock_len);
         if(clnt_sock==-1){
-            //usleep(SLEEP_TIME);
+            usleep(SLEEP_TIME);
             continue ;
         }
         
-        if(pthread_create(&pid[count++], NULL, handle_message, (void *)&clnt_sock)){
+        if(pthread_create(&pid[client_count++], NULL, handle_message, (void *)&clnt_sock)){
             printf("ERROR: thread can not established on socknum %d!\n", clnt_sock);
         }
         printf(">>>>>accpeted new request, thread established on socknum %d!\n", clnt_sock);
-        
+        usleep(SLEEP_TIME);
 
     }
-    for(int i=0; i<count; ++i){
-        pthread_join(pid[i], NULL);
-    }
-    close(sock);
-    
-    return 0;
+     close(sock);
 }
-
 // ====================================================================================================
 //  1. ask master give it a unique number to distinguish it from others
-//  2. get other data center infomation. At the mean time, let others know a new server is participate
+//  2. get other data center's infomation. 
 //  3. update dependency relationship
 //
 // =====================================================================================================
